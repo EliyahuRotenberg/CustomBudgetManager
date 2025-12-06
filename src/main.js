@@ -162,10 +162,13 @@ function setupIPC() {
     return db.getMonthlyTrajectory(month, year);
   });
 
-  ipcMain.handle('get-dashboard-data', async () => {
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const year = now.getFullYear();
+  ipcMain.handle('get-dashboard-data', async (event, month, year) => {
+    // Default to current month if not specified
+    if (!month || !year) {
+      const now = new Date();
+      month = now.getMonth() + 1;
+      year = now.getFullYear();
+    }
 
     return {
       incomeSources: db.getIncomeSources(),

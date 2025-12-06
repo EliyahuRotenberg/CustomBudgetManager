@@ -12,9 +12,10 @@ let currentData = {
   snapshot: {}
 };
 
-const currentDate = new Date();
-const currentMonth = currentDate.getMonth() + 1;
-const currentYear = currentDate.getFullYear();
+// Selected month/year (can be navigated)
+const todayDate = new Date();
+let selectedMonth = todayDate.getMonth() + 1;
+let selectedYear = todayDate.getFullYear();
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -29,13 +30,45 @@ function setCurrentMonth() {
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
   document.getElementById('currentMonth').textContent =
-    `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    `${monthNames[selectedMonth - 1]} ${selectedYear}`;
+
+  // Show/hide "Today" button based on whether we're viewing current month
+  const isCurrentMonth = selectedMonth === (todayDate.getMonth() + 1) && selectedYear === todayDate.getFullYear();
+  document.getElementById('todayBtn').style.display = isCurrentMonth ? 'none' : 'inline-flex';
+}
+
+// Month navigation functions
+function goToPreviousMonth() {
+  selectedMonth--;
+  if (selectedMonth < 1) {
+    selectedMonth = 12;
+    selectedYear--;
+  }
+  setCurrentMonth();
+  loadDashboard();
+}
+
+function goToNextMonth() {
+  selectedMonth++;
+  if (selectedMonth > 12) {
+    selectedMonth = 1;
+    selectedYear++;
+  }
+  setCurrentMonth();
+  loadDashboard();
+}
+
+function goToCurrentMonth() {
+  selectedMonth = todayDate.getMonth() + 1;
+  selectedYear = todayDate.getFullYear();
+  setCurrentMonth();
+  loadDashboard();
 }
 
 // Load dashboard data
 async function loadDashboard() {
   try {
-    const data = await ipcRenderer.invoke('get-dashboard-data');
+    const data = await ipcRenderer.invoke('get-dashboard-data', selectedMonth, selectedYear);
     currentData = data;
     renderDashboard();
   } catch (error) {
@@ -46,6 +79,7 @@ async function loadDashboard() {
 // Render all dashboard components
 function renderDashboard() {
   renderSafeToSpend();
+  renderSummaryCards();
   renderIncomeChecklist();
   renderObligationsChecklist();
   renderExpensesByCategory();
@@ -53,6 +87,38 @@ function renderDashboard() {
   renderAlerts();
   renderSuggestions();
   renderTrajectory();
+}
+
+// Render summary cards
+function renderSummaryCards() {
+  const snapshot = currentData.snapshot;
+
+  // Income summary
+  const totalReceivedIncome = currentData.incomeReceived.reduce((sum, i) => sum + i.amount, 0);
+  const receivedCount = new Set(currentData.incomeReceived.map(i => i.income_source_id)).size;
+  const totalSources = currentData.incomeSources.length;
+  document.getElementById('summaryIncome').textContent = formatCurrency(totalReceivedIncome);
+  document.getElementById('summaryIncomeDetail').textContent = `${receivedCount} / ${totalSources} sources received`;
+
+  // Obligations summary
+  const totalPaidObligations = currentData.obligationsPaid.reduce((sum, o) => sum + o.amount, 0);
+  const paidCount = new Set(currentData.obligationsPaid.map(o => o.obligation_id)).size;
+  const totalObligations = currentData.obligations.length;
+  document.getElementById('summaryObligations').textContent = formatCurrency(totalPaidObligations);
+  document.getElementById('summaryObligationsDetail').textContent = `${paidCount} / ${totalObligations} paid`;
+
+  // Expenses summary
+  const totalExpenses = currentData.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const expenseCount = currentData.expenses.length;
+  document.getElementById('summaryExpenses').textContent = formatCurrency(totalExpenses);
+  document.getElementById('summaryExpensesDetail').textContent = `${expenseCount} transaction${expenseCount !== 1 ? 's' : ''}`;
+
+  // Net calculation
+  const net = totalReceivedIncome - totalPaidObligations - totalExpenses;
+  const netEl = document.getElementById('summaryNet');
+  netEl.textContent = formatCurrency(net);
+  netEl.className = 'summary-value ' + (net >= 0 ? 'positive' : 'negative');
+  document.getElementById('summaryNetDetail').textContent = net >= 0 ? 'Surplus' : 'Deficit';
 }
 
 // Render Safe to Spend
@@ -146,7 +212,7 @@ function renderObligationsChecklist() {
   list.innerHTML = currentData.obligations.map(obligation => {
     const paid = paidMap.get(obligation.id);
     const isCompleted = !!paid;
-    const daysUntilDue = obligation.due_date - currentDate.getDate();
+    const daysUntilDue = obligation.due_date - todayDate.getDate();
 
     return `
       <li class="checklist-item ${isCompleted ? 'completed' : ''}">
@@ -267,7 +333,7 @@ function renderAlerts() {
   const panel = document.getElementById('alertsPanel');
   const list = document.getElementById('alertsList');
 
-  const today = currentDate.getDate();
+  const today = todayDate.getDate();
   const upcomingItems = [];
 
   // Check income
@@ -378,7 +444,7 @@ async function renderTrajectory() {
   const panel = document.getElementById('trajectoryPanel');
 
   try {
-    const trajectory = await ipcRenderer.invoke('get-monthly-trajectory', currentMonth, currentYear);
+    const trajectory = await ipcRenderer.invoke('get-monthly-trajectory', selectedMonth, selectedYear);
 
     if (trajectory.length === 0) {
       panel.style.display = 'none';
@@ -457,6 +523,11 @@ function setupEventListeners() {
   // Quick entry
   document.getElementById('quickEntryBtn').addEventListener('click', openQuickEntry);
   document.getElementById('closeQuickEntry').addEventListener('click', closeQuickEntry);
+
+  // Month navigation
+  document.getElementById('prevMonthBtn').addEventListener('click', goToPreviousMonth);
+  document.getElementById('nextMonthBtn').addEventListener('click', goToNextMonth);
+  document.getElementById('todayBtn').addEventListener('click', goToCurrentMonth);
 
   // Settings
   document.getElementById('settingsBtn').addEventListener('click', openSettings);
@@ -1074,14 +1145,14 @@ async function handleExport() {
   }
 
   try {
-    const csv = await ipcRenderer.invoke('export-csv', type, currentMonth, currentYear);
+    const csv = await ipcRenderer.invoke('export-csv', type, selectedMonth, selectedYear);
 
     // Create a blob and download it
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `budget_${type}_${currentYear}-${currentMonth.toString().padStart(2, '0')}.csv`;
+    a.download = `budget_${type}_${selectedYear}-${selectedMonth.toString().padStart(2, '0')}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
