@@ -21,6 +21,7 @@
     "electron-rebuild": "^3.2.9"
   },
   "dependencies": {
-    "better-sqlite3": "^9.2.2"
+    "better-sqlite3": "^9.2.2",
+    "start": "^5.1.0"
   }
 }
