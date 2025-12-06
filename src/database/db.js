@@ -204,9 +204,9 @@ class BudgetDatabase {
 
   getIncomeReceived(month, year) {
     return this.db.prepare(`
-      SELECT ir.*, is.name as source_name
+      SELECT ir.*, ins.name as source_name
       FROM income_received ir
-      JOIN income_sources is ON ir.income_source_id = is.id
+      JOIN income_sources ins ON ir.income_source_id = ins.id
       WHERE ir.month = ? AND ir.year = ?
       ORDER BY ir.received_date DESC
     `).all(month, year);
