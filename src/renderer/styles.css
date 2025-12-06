@@ -156,6 +156,11 @@ body {
   margin-top: 4px;
 }
 
+.section-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* Buttons */
 .btn {
   padding: 8px 16px;

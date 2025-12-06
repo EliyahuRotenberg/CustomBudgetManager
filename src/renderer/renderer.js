@@ -492,6 +492,33 @@ function setupEventListeners() {
   // Category management
   document.getElementById('addCategoryBtn').addEventListener('click', handleAddCategory);
 
+  // Dashboard section manage buttons
+  document.getElementById('manageIncomeBtn').addEventListener('click', () => openSettingsToTab('income-sources'));
+  document.getElementById('manageObligationsBtn').addEventListener('click', () => openSettingsToTab('obligations-mgmt'));
+  document.getElementById('manageGoalsBtn').addEventListener('click', () => openSettingsToTab('goals-mgmt'));
+  document.getElementById('viewExpensesBtn').addEventListener('click', openExpensesView);
+  document.getElementById('viewIncomeRecordsBtn').addEventListener('click', openIncomeReceivedView);
+  document.getElementById('viewObligationPaymentsBtn').addEventListener('click', openObligationsPaidView);
+
+  // Expenses view modal
+  document.getElementById('closeExpensesView').addEventListener('click', closeExpensesView);
+  document.getElementById('closeEditExpenseModal').addEventListener('click', closeEditExpenseModal);
+  document.getElementById('editExpenseForm').addEventListener('submit', handleEditExpenseSubmit);
+
+  // Income received view modal
+  document.getElementById('closeIncomeReceivedView').addEventListener('click', closeIncomeReceivedView);
+  document.getElementById('closeEditIncomeReceivedModal').addEventListener('click', closeEditIncomeReceivedModal);
+  document.getElementById('editIncomeReceivedForm').addEventListener('submit', handleEditIncomeReceivedSubmit);
+
+  // Obligations paid view modal
+  document.getElementById('closeObligationsPaidView').addEventListener('click', closeObligationsPaidView);
+  document.getElementById('closeEditObligationPaidModal').addEventListener('click', closeEditObligationPaidModal);
+  document.getElementById('editObligationPaidForm').addEventListener('submit', handleEditObligationPaidSubmit);
+
+  // Category edit modal
+  document.getElementById('closeEditCategoryModal').addEventListener('click', closeEditCategoryModal);
+  document.getElementById('editCategoryForm').addEventListener('submit', handleEditCategorySubmit);
+
   // Close modals on overlay click
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', (e) => {
@@ -620,8 +647,53 @@ async function openSettings() {
   document.getElementById('settingsModal').classList.add('active');
 }
 
+async function openSettingsToTab(tabName) {
+  await openSettings();
+  switchTab(tabName, document.getElementById('settingsModal'));
+}
+
 function closeSettings() {
   document.getElementById('settingsModal').classList.remove('active');
+}
+
+// Expenses View Modal
+function openExpensesView() {
+  renderExpensesDetailView();
+  document.getElementById('expensesViewModal').classList.add('active');
+}
+
+function closeExpensesView() {
+  document.getElementById('expensesViewModal').classList.remove('active');
+}
+
+function renderExpensesDetailView() {
+  const list = document.getElementById('expensesDetailList');
+
+  if (currentData.expenses.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-text">No expenses this month.</div></div>';
+    return;
+  }
+
+  // Sort expenses by date (most recent first)
+  const sortedExpenses = [...currentData.expenses].sort((a, b) =>
+    new Date(b.expense_date) - new Date(a.expense_date)
+  );
+
+  list.innerHTML = sortedExpenses.map(expense => `
+    <div class="checklist-item">
+      <div class="item-info">
+        <div class="item-name">${expense.category_name}</div>
+        <div class="item-details">
+          ${formatCurrency(expense.amount)} on ${formatDate(expense.expense_date)}
+          ${expense.notes ? ` • ${expense.notes}` : ''}
+        </div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-small btn-secondary" onclick="editExpense(${expense.id})">Edit</button>
+        <button class="btn btn-small btn-danger" onclick="deleteExpense(${expense.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
 }
 
 async function loadSettingsData() {
@@ -695,7 +767,8 @@ function renderCategoriesList() {
         <div class="item-name">${category.name}</div>
       </div>
       <div class="item-actions">
-        <button class="btn btn-small btn-danger" onclick="deleteCategory(${category.id}, '${category.name}')">Delete</button>
+        <button class="btn btn-small btn-secondary" onclick="editCategory(${category.id}, '${category.name.replace(/'/g, "\\'")}')">Edit</button>
+        <button class="btn btn-small btn-danger" onclick="deleteCategory(${category.id}, '${category.name.replace(/'/g, "\\'")}')">Delete</button>
       </div>
     </div>
   `).join('');
@@ -731,6 +804,37 @@ window.deleteCategory = async (id, name) => {
     alert('Error deleting category: ' + error.message);
   }
 };
+
+window.editCategory = (id, name) => {
+  document.getElementById('editCategoryId').value = id;
+  document.getElementById('editCategoryName').value = name;
+  document.getElementById('editCategoryModal').classList.add('active');
+};
+
+function closeEditCategoryModal() {
+  document.getElementById('editCategoryModal').classList.remove('active');
+}
+
+async function handleEditCategorySubmit(e) {
+  e.preventDefault();
+
+  const id = parseInt(document.getElementById('editCategoryId').value);
+  const name = document.getElementById('editCategoryName').value.trim();
+
+  if (!name) {
+    alert('Please enter a category name');
+    return;
+  }
+
+  try {
+    await ipcRenderer.invoke('update-expense-category', id, name);
+    closeEditCategoryModal();
+    await loadDashboard();
+    await loadSettingsData();
+  } catch (error) {
+    alert('Error updating category: ' + error.message);
+  }
+}
 
 function renderGoalsManagement() {
   const list = document.getElementById('goalsManagementList');
@@ -1006,6 +1110,250 @@ function setupKeyboardShortcuts() {
     }
   });
 }
+
+// ===== Expense Management =====
+function closeEditExpenseModal() {
+  document.getElementById('editExpenseModal').classList.remove('active');
+}
+
+window.editExpense = (id) => {
+  const expense = currentData.expenses.find(e => e.id === id);
+  if (!expense) return;
+
+  // Populate category dropdown
+  const categorySelect = document.getElementById('editExpenseCategorySelect');
+  categorySelect.innerHTML = currentData.expenseCategories.map(c =>
+    `<option value="${c.id}" ${c.id === expense.category_id ? 'selected' : ''}>${c.name}</option>`
+  ).join('');
+
+  document.getElementById('editExpenseId').value = id;
+  document.getElementById('editExpenseAmount').value = expense.amount;
+  document.getElementById('editExpenseDate').value = expense.expense_date;
+  document.getElementById('editExpenseNotes').value = expense.notes || '';
+
+  document.getElementById('editExpenseModal').classList.add('active');
+};
+
+async function handleEditExpenseSubmit(e) {
+  e.preventDefault();
+
+  const id = parseInt(document.getElementById('editExpenseId').value);
+  const data = {
+    category_id: parseInt(document.getElementById('editExpenseCategorySelect').value),
+    amount: parseFloat(document.getElementById('editExpenseAmount').value),
+    expense_date: document.getElementById('editExpenseDate').value,
+    notes: document.getElementById('editExpenseNotes').value
+  };
+
+  try {
+    await ipcRenderer.invoke('update-expense', id, data);
+    closeEditExpenseModal();
+    await loadDashboard();
+    renderExpensesDetailView();
+  } catch (error) {
+    alert('Error updating expense: ' + error.message);
+  }
+}
+
+window.deleteExpense = async (id) => {
+  if (!confirm('Are you sure you want to delete this expense?')) return;
+
+  try {
+    await ipcRenderer.invoke('delete-expense', id);
+    await loadDashboard();
+    renderExpensesDetailView();
+  } catch (error) {
+    alert('Error deleting expense: ' + error.message);
+  }
+};
+
+// ===== Income Received Management =====
+function openIncomeReceivedView() {
+  renderIncomeReceivedDetailView();
+  document.getElementById('incomeReceivedViewModal').classList.add('active');
+}
+
+function closeIncomeReceivedView() {
+  document.getElementById('incomeReceivedViewModal').classList.remove('active');
+}
+
+function closeEditIncomeReceivedModal() {
+  document.getElementById('editIncomeReceivedModal').classList.remove('active');
+}
+
+function renderIncomeReceivedDetailView() {
+  const list = document.getElementById('incomeReceivedDetailList');
+
+  if (currentData.incomeReceived.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-text">No income received this month.</div></div>';
+    return;
+  }
+
+  const sortedIncome = [...currentData.incomeReceived].sort((a, b) =>
+    new Date(b.received_date) - new Date(a.received_date)
+  );
+
+  list.innerHTML = sortedIncome.map(income => `
+    <div class="checklist-item">
+      <div class="item-info">
+        <div class="item-name">${income.source_name}</div>
+        <div class="item-details">
+          ${formatCurrency(income.amount)} on ${formatDate(income.received_date)}
+          ${income.notes ? ` • ${income.notes}` : ''}
+        </div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-small btn-secondary" onclick="editIncomeReceived(${income.id})">Edit</button>
+        <button class="btn btn-small btn-danger" onclick="deleteIncomeReceived(${income.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.editIncomeReceived = (id) => {
+  const income = currentData.incomeReceived.find(i => i.id === id);
+  if (!income) return;
+
+  // Populate source dropdown
+  const sourceSelect = document.getElementById('editIncomeReceivedSourceSelect');
+  sourceSelect.innerHTML = currentData.incomeSources.map(s =>
+    `<option value="${s.id}" ${s.id === income.income_source_id ? 'selected' : ''}>${s.name}</option>`
+  ).join('');
+
+  document.getElementById('editIncomeReceivedId').value = id;
+  document.getElementById('editIncomeReceivedAmount').value = income.amount;
+  document.getElementById('editIncomeReceivedDate').value = income.received_date;
+  document.getElementById('editIncomeReceivedNotes').value = income.notes || '';
+
+  document.getElementById('editIncomeReceivedModal').classList.add('active');
+};
+
+async function handleEditIncomeReceivedSubmit(e) {
+  e.preventDefault();
+
+  const id = parseInt(document.getElementById('editIncomeReceivedId').value);
+  const data = {
+    income_source_id: parseInt(document.getElementById('editIncomeReceivedSourceSelect').value),
+    amount: parseFloat(document.getElementById('editIncomeReceivedAmount').value),
+    received_date: document.getElementById('editIncomeReceivedDate').value,
+    notes: document.getElementById('editIncomeReceivedNotes').value
+  };
+
+  try {
+    await ipcRenderer.invoke('update-income-received', id, data);
+    closeEditIncomeReceivedModal();
+    await loadDashboard();
+    renderIncomeReceivedDetailView();
+  } catch (error) {
+    alert('Error updating income record: ' + error.message);
+  }
+}
+
+window.deleteIncomeReceived = async (id) => {
+  if (!confirm('Are you sure you want to delete this income record?')) return;
+
+  try {
+    await ipcRenderer.invoke('delete-income-received', id);
+    await loadDashboard();
+    renderIncomeReceivedDetailView();
+  } catch (error) {
+    alert('Error deleting income record: ' + error.message);
+  }
+};
+
+// ===== Obligations Paid Management =====
+function openObligationsPaidView() {
+  renderObligationsPaidDetailView();
+  document.getElementById('obligationsPaidViewModal').classList.add('active');
+}
+
+function closeObligationsPaidView() {
+  document.getElementById('obligationsPaidViewModal').classList.remove('active');
+}
+
+function closeEditObligationPaidModal() {
+  document.getElementById('editObligationPaidModal').classList.remove('active');
+}
+
+function renderObligationsPaidDetailView() {
+  const list = document.getElementById('obligationsPaidDetailList');
+
+  if (currentData.obligationsPaid.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-text">No obligations paid this month.</div></div>';
+    return;
+  }
+
+  const sortedPayments = [...currentData.obligationsPaid].sort((a, b) =>
+    new Date(b.paid_date) - new Date(a.paid_date)
+  );
+
+  list.innerHTML = sortedPayments.map(payment => `
+    <div class="checklist-item">
+      <div class="item-info">
+        <div class="item-name">${payment.obligation_name}</div>
+        <div class="item-details">
+          ${formatCurrency(payment.amount)} on ${formatDate(payment.paid_date)}
+          ${payment.notes ? ` • ${payment.notes}` : ''}
+        </div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-small btn-secondary" onclick="editObligationPaid(${payment.id})">Edit</button>
+        <button class="btn btn-small btn-danger" onclick="deleteObligationPaid(${payment.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.editObligationPaid = (id) => {
+  const payment = currentData.obligationsPaid.find(p => p.id === id);
+  if (!payment) return;
+
+  // Populate obligation dropdown
+  const oblSelect = document.getElementById('editObligationPaidSelect');
+  oblSelect.innerHTML = currentData.obligations.map(o =>
+    `<option value="${o.id}" ${o.id === payment.obligation_id ? 'selected' : ''}>${o.name}</option>`
+  ).join('');
+
+  document.getElementById('editObligationPaidId').value = id;
+  document.getElementById('editObligationPaidAmount').value = payment.amount;
+  document.getElementById('editObligationPaidDate').value = payment.paid_date;
+  document.getElementById('editObligationPaidNotes').value = payment.notes || '';
+
+  document.getElementById('editObligationPaidModal').classList.add('active');
+};
+
+async function handleEditObligationPaidSubmit(e) {
+  e.preventDefault();
+
+  const id = parseInt(document.getElementById('editObligationPaidId').value);
+  const data = {
+    obligation_id: parseInt(document.getElementById('editObligationPaidSelect').value),
+    amount: parseFloat(document.getElementById('editObligationPaidAmount').value),
+    paid_date: document.getElementById('editObligationPaidDate').value,
+    notes: document.getElementById('editObligationPaidNotes').value
+  };
+
+  try {
+    await ipcRenderer.invoke('update-obligation-paid', id, data);
+    closeEditObligationPaidModal();
+    await loadDashboard();
+    renderObligationsPaidDetailView();
+  } catch (error) {
+    alert('Error updating payment record: ' + error.message);
+  }
+}
+
+window.deleteObligationPaid = async (id) => {
+  if (!confirm('Are you sure you want to delete this payment record?')) return;
+
+  try {
+    await ipcRenderer.invoke('delete-obligation-paid', id);
+    await loadDashboard();
+    renderObligationsPaidDetailView();
+  } catch (error) {
+    alert('Error deleting payment record: ' + error.message);
+  }
+};
 
 // Utility functions
 function formatCurrency(amount) {
