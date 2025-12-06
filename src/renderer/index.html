@@ -196,6 +196,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="income-sources">Income Sources</button>
         <button class="tab" data-tab="obligations-mgmt">Obligations</button>
+        <button class="tab" data-tab="categories-mgmt">Categories</button>
         <button class="tab" data-tab="goals-mgmt">Goals</button>
       </div>
 
@@ -209,6 +210,18 @@
       <div id="obligationsMgmtTab" class="tab-content hidden">
         <button class="btn btn-primary mb-2" id="addObligationBtn">+ Add Obligation</button>
         <div id="obligationsList"></div>
+      </div>
+
+      <!-- Expense Categories Management -->
+      <div id="categoriesMgmtTab" class="tab-content hidden">
+        <div class="form-group">
+          <label class="form-label">Add New Category</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" class="form-input" id="newCategoryName" placeholder="Category name..." style="flex: 1;">
+            <button class="btn btn-primary" id="addCategoryBtn">+ Add</button>
+          </div>
+        </div>
+        <div id="categoriesList"></div>
       </div>
 
       <!-- Goals Management -->

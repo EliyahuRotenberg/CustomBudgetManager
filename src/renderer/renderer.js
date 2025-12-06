@@ -443,6 +443,9 @@ function setupEventListeners() {
   // Export button
   document.getElementById('exportBtn').addEventListener('click', handleExport);
 
+  // Category management
+  document.getElementById('addCategoryBtn').addEventListener('click', handleAddCategory);
+
   // Close modals on overlay click
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', (e) => {
@@ -474,6 +477,8 @@ function switchTab(tabName, modal) {
     document.getElementById('incomeSourcesTab').classList.remove('hidden');
   } else if (tabName === 'obligations-mgmt') {
     document.getElementById('obligationsMgmtTab').classList.remove('hidden');
+  } else if (tabName === 'categories-mgmt') {
+    document.getElementById('categoriesMgmtTab').classList.remove('hidden');
   } else if (tabName === 'goals-mgmt') {
     document.getElementById('goalsMgmtTab').classList.remove('hidden');
   }
@@ -576,6 +581,7 @@ function closeSettings() {
 async function loadSettingsData() {
   renderIncomeSourcesList();
   renderObligationsList();
+  renderCategoriesList();
   renderGoalsManagement();
 }
 
@@ -628,6 +634,51 @@ function renderObligationsList() {
     </div>
   `).join('');
 }
+
+function renderCategoriesList() {
+  const list = document.getElementById('categoriesList');
+
+  if (currentData.expenseCategories.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-text">No categories yet.</div></div>';
+    return;
+  }
+
+  list.innerHTML = currentData.expenseCategories.map(category => `
+    <div class="checklist-item">
+      <div class="item-info">
+        <div class="item-name">${category.name}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-small btn-danger" onclick="deleteCategory(${category.id}, '${category.name}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function handleAddCategory() {
+  const nameInput = document.getElementById('newCategoryName');
+  const name = nameInput.value.trim();
+
+  if (!name) {
+    alert('Please enter a category name');
+    return;
+  }
+
+  try {
+    await ipcRenderer.invoke('add-expense-category', name);
+    nameInput.value = '';
+    await loadDashboard();
+    await loadSettingsData();
+  } catch (error) {
+    alert('Error adding category: ' + error.message);
+  }
+}
+
+window.deleteCategory = async (id, name) => {
+  // Note: We don't have a delete category API yet, so we'll just show a message
+  // In a full implementation, you'd want to check if the category is in use first
+  alert(`Delete functionality for categories is not yet implemented. Category "${name}" cannot be deleted if it has existing expenses.`);
+};
 
 function renderGoalsManagement() {
   const list = document.getElementById('goalsManagementList');
