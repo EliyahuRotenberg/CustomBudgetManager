@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>Budget Manager</h1>
+        <div class="current-month" id="currentMonth"></div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-secondary" id="settingsBtn">⚙️ Settings</button>
+        <button class="btn btn-secondary" id="exportBtn">📊 Export</button>
+      </div>
+    </div>
+
+    <!-- Safe to Spend Hero -->
+    <div class="safe-to-spend-hero">
+      <div class="safe-to-spend-label">Safe to Spend</div>
+      <div class="safe-to-spend-amount positive" id="safeToSpendAmount">£0.00</div>
+      <div class="safe-to-spend-status positive" id="safeToSpendStatus">Healthy Buffer</div>
+    </div>
+
+    <!-- Upcoming Alerts -->
+    <div class="alerts-panel" id="alertsPanel">
+      <div class="section-title mb-2">Upcoming Items (Next 7 Days)</div>
+      <div id="alertsList"></div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+      <!-- Income Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Income</div>
+            <div class="section-subtitle" id="incomeSubtitle">Expected vs Received</div>
+          </div>
+          <button class="btn btn-small btn-secondary" id="manageIncomeBtn">Manage</button>
+        </div>
+        <ul class="checklist" id="incomeChecklist"></ul>
+      </div>
+
+      <!-- Obligations Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Obligations</div>
+            <div class="section-subtitle" id="obligationsSubtitle">Due vs Paid</div>
+          </div>
+          <button class="btn btn-small btn-secondary" id="manageObligationsBtn">Manage</button>
+        </div>
+        <ul class="checklist" id="obligationsChecklist"></ul>
+      </div>
+
+      <!-- Variable Expenses Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Variable Expenses</div>
+            <div class="section-subtitle" id="expensesSubtitle">This Month</div>
+          </div>
+          <button class="btn btn-small btn-secondary" id="viewExpensesBtn">View All</button>
+        </div>
+        <ul class="category-list" id="expensesCategoryList"></ul>
+      </div>
+
+      <!-- Goals Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Goals Progress</div>
+            <div class="section-subtitle">Your Financial Targets</div>
+          </div>
+          <button class="btn btn-small btn-secondary" id="manageGoalsBtn">Manage</button>
+        </div>
+        <div id="goalsContainer"></div>
+      </div>
+    </div>
+
+    <!-- Monthly Suggestions -->
+    <div class="dashboard-section" id="suggestionsPanel" style="display: none;">
+      <div class="section-title mb-2">💡 Monthly Suggestions</div>
+      <div id="suggestionsList"></div>
+    </div>
+  </div>
+
+  <!-- Floating Action Button -->
+  <button class="fab" id="quickEntryBtn" title="Quick Entry (Ctrl+N)">+</button>
+
+  <!-- Quick Entry Modal -->
+  <div class="modal-overlay" id="quickEntryModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Quick Entry</h2>
+        <button class="modal-close" id="closeQuickEntry">&times;</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="income">Income</button>
+        <button class="tab" data-tab="expense">Expense</button>
+        <button class="tab" data-tab="obligation">Obligation</button>
+      </div>
+
+      <!-- Income Form -->
+      <form id="incomeForm" class="tab-content">
+        <div class="form-group">
+          <label class="form-label">Income Source</label>
+          <select class="form-select" id="incomeSourceSelect" required>
+            <option value="">Select source...</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Amount (£)</label>
+            <input type="number" class="form-input" id="incomeAmount" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="incomeDate" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (optional)</label>
+          <input type="text" class="form-input" id="incomeNotes">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Record Income</button>
+      </form>
+
+      <!-- Expense Form -->
+      <form id="expenseForm" class="tab-content hidden">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="expenseCategorySelect" required>
+            <option value="">Select category...</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Amount (£)</label>
+            <input type="number" class="form-input" id="expenseAmount" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="expenseDate" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (optional)</label>
+          <input type="text" class="form-input" id="expenseNotes">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Add Expense</button>
+      </form>
+
+      <!-- Obligation Form -->
+      <form id="obligationForm" class="tab-content hidden">
+        <div class="form-group">
+          <label class="form-label">Obligation</label>
+          <select class="form-select" id="obligationSelect" required>
+            <option value="">Select obligation...</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Amount (£)</label>
+            <input type="number" class="form-input" id="obligationAmount" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="obligationDate" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (optional)</label>
+          <input type="text" class="form-input" id="obligationNotes">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Mark as Paid</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Settings</h2>
+        <button class="modal-close" id="closeSettings">&times;</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="income-sources">Income Sources</button>
+        <button class="tab" data-tab="obligations-mgmt">Obligations</button>
+        <button class="tab" data-tab="goals-mgmt">Goals</button>
+      </div>
+
+      <!-- Income Sources Management -->
+      <div id="incomeSourcesTab" class="tab-content">
+        <button class="btn btn-primary mb-2" id="addIncomeSourceBtn">+ Add Income Source</button>
+        <div id="incomeSourcesList"></div>
+      </div>
+
+      <!-- Obligations Management -->
+      <div id="obligationsMgmtTab" class="tab-content hidden">
+        <button class="btn btn-primary mb-2" id="addObligationBtn">+ Add Obligation</button>
+        <div id="obligationsList"></div>
+      </div>
+
+      <!-- Goals Management -->
+      <div id="goalsMgmtTab" class="tab-content hidden">
+        <div id="goalsManagementList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Management Modals (for adding/editing) -->
+  <div class="modal-overlay" id="incomeSourceModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="incomeSourceModalTitle">Add Income Source</h2>
+        <button class="modal-close" id="closeIncomeSourceModal">&times;</button>
+      </div>
+      <form id="incomeSourceForm">
+        <input type="hidden" id="incomeSourceId">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-input" id="incomeSourceName" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Expected Min (£)</label>
+            <input type="number" class="form-input" id="incomeSourceMin" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Expected Max (£)</label>
+            <input type="number" class="form-input" id="incomeSourceMax" step="0.01">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Expected Day of Month</label>
+          <input type="number" class="form-input" id="incomeSourceDay" min="1" max="31" required>
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="obligationModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="obligationModalTitle">Add Obligation</h2>
+        <button class="modal-close" id="closeObligationModal">&times;</button>
+      </div>
+      <form id="obligationMgmtForm">
+        <input type="hidden" id="obligationId">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-input" id="obligationName" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Amount (£)</label>
+            <input type="number" class="form-input" id="obligationAmountMgmt" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Due Date (Day of Month)</label>
+            <input type="number" class="form-input" id="obligationDueDate" min="1" max="31" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="obligationCategory" required>
+            <option value="loan">Loan</option>
+            <option value="rent">Rent</option>
+            <option value="credit_card">Credit Card</option>
+            <option value="subscription">Subscription</option>
+            <option value="regular">Regular</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total Balance (for loans)</label>
+          <input type="number" class="form-input" id="obligationBalance" step="0.01">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="goalModalTitle">Edit Goal</h2>
+        <button class="modal-close" id="closeGoalModal">&times;</button>
+      </div>
+      <form id="goalForm">
+        <input type="hidden" id="goalType">
+        <div class="form-group">
+          <label class="form-label">Target Amount (£)</label>
+          <input type="number" class="form-input" id="goalTargetAmount" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Amount (£)</label>
+          <input type="number" class="form-input" id="goalCurrentAmount" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monthly Target (£)</label>
+          <input type="number" class="form-input" id="goalMonthlyTarget" step="0.01">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

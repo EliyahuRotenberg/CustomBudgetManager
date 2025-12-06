@@ -1,0 +1,24 @@
+{
+  "name": "budget-manager",
+  "version": "1.0.0",
+  "description": "A local Windows desktop budget manager for irregular income and fixed obligations",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "keywords": [
+    "budget",
+    "finance",
+    "electron",
+    "desktop"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.2.2"
+  }
+}
