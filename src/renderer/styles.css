@@ -651,6 +651,78 @@ body {
   display: none !important;
 }
 
+/* Trajectory View */
+.trajectory-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: 6px;
+  border-left: 4px solid var(--border-color);
+}
+
+.trajectory-item.income {
+  border-left-color: var(--green);
+}
+
+.trajectory-item.obligation {
+  border-left-color: var(--amber);
+}
+
+.trajectory-item.expense {
+  border-left-color: var(--red);
+}
+
+.trajectory-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.trajectory-info {
+  flex: 1;
+  margin: 0 16px;
+}
+
+.trajectory-description {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.trajectory-type {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.trajectory-amount {
+  font-weight: 600;
+  font-size: 16px;
+  width: 100px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.trajectory-amount.positive {
+  color: var(--green);
+}
+
+.trajectory-amount.negative {
+  color: var(--red);
+}
+
+.trajectory-balance {
+  font-weight: 700;
+  font-size: 16px;
+  width: 100px;
+  text-align: right;
+  flex-shrink: 0;
+  padding-left: 16px;
+  border-left: 1px solid var(--border-color);
+}
+
 /* Empty states */
 .empty-state {
   text-align: center;

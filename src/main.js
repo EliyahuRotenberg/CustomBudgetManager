@@ -128,6 +128,10 @@ function setupIPC() {
     return db.getMonthlySnapshot(month, year);
   });
 
+  ipcMain.handle('get-monthly-trajectory', async (event, month, year) => {
+    return db.getMonthlyTrajectory(month, year);
+  });
+
   ipcMain.handle('get-dashboard-data', async () => {
     const now = new Date();
     const month = now.getMonth() + 1;

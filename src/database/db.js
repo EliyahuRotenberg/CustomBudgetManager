@@ -399,8 +399,9 @@ class BudgetDatabase {
       .filter(o => !paidObligationIds.has(o.id))
       .reduce((sum, o) => sum + o.amount, 0);
 
-    // Safe to spend = income received - obligations paid - pending obligations - variable spending
-    const safeToSpend = totalReceivedIncome - totalObligationsPaid - pendingObligations - totalVariableSpending;
+    // Safe to spend = income received - obligations paid - variable spending
+    // Note: We only count what's actually happened (received/paid/spent), not expected/pending
+    const safeToSpend = totalReceivedIncome - totalObligationsPaid - totalVariableSpending;
 
     return {
       month,
@@ -413,6 +414,59 @@ class BudgetDatabase {
       totalVariableSpending,
       safeToSpend
     };
+  }
+
+  // ===== Monthly Trajectory =====
+  getMonthlyTrajectory(month, year) {
+    // Get all transactions for the month
+    const incomeReceived = this.getIncomeReceived(month, year);
+    const obligationsPaid = this.getObligationsPaid(month, year);
+    const expenses = this.getExpenses(month, year);
+
+    // Combine all transactions with dates
+    const transactions = [];
+
+    incomeReceived.forEach(income => {
+      transactions.push({
+        date: income.received_date,
+        type: 'income',
+        amount: income.amount,
+        description: income.source_name
+      });
+    });
+
+    obligationsPaid.forEach(obl => {
+      transactions.push({
+        date: obl.paid_date,
+        type: 'obligation',
+        amount: -obl.amount,
+        description: obl.obligation_name
+      });
+    });
+
+    expenses.forEach(exp => {
+      transactions.push({
+        date: exp.expense_date,
+        type: 'expense',
+        amount: -exp.amount,
+        description: exp.category_name
+      });
+    });
+
+    // Sort by date
+    transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Calculate running balance
+    let runningBalance = 0;
+    const trajectory = transactions.map(tx => {
+      runningBalance += tx.amount;
+      return {
+        ...tx,
+        balance: runningBalance
+      };
+    });
+
+    return trajectory;
   }
 
   // ===== Export =====

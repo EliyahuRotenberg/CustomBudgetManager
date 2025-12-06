@@ -52,6 +52,7 @@ function renderDashboard() {
   renderGoals();
   renderAlerts();
   renderSuggestions();
+  renderTrajectory();
 }
 
 // Render Safe to Spend
@@ -369,6 +370,49 @@ function renderSuggestions() {
 
   panel.style.display = 'block';
   list.innerHTML = suggestions.map(s => `<div style="padding: 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 8px;">${s}</div>`).join('');
+}
+
+// Render monthly trajectory
+async function renderTrajectory() {
+  const view = document.getElementById('trajectoryView');
+  const panel = document.getElementById('trajectoryPanel');
+
+  try {
+    const trajectory = await ipcRenderer.invoke('get-monthly-trajectory', currentMonth, currentYear);
+
+    if (trajectory.length === 0) {
+      panel.style.display = 'none';
+      return;
+    }
+
+    panel.style.display = 'block';
+
+    view.innerHTML = trajectory.map(tx => {
+      const date = new Date(tx.date);
+      const formattedDate = `${date.getDate()} ${date.toLocaleString('en-US', { month: 'short' })}`;
+      const amountClass = tx.amount >= 0 ? 'positive' : 'negative';
+      const balanceColor = tx.balance >= 0 ? 'var(--green)' : 'var(--red)';
+
+      return `
+        <div class="trajectory-item ${tx.type}">
+          <div class="trajectory-date">${formattedDate}</div>
+          <div class="trajectory-info">
+            <div class="trajectory-description">${tx.description}</div>
+            <div class="trajectory-type">${tx.type}</div>
+          </div>
+          <div class="trajectory-amount ${amountClass}">
+            ${tx.amount >= 0 ? '+' : ''}${formatCurrency(tx.amount)}
+          </div>
+          <div class="trajectory-balance" style="color: ${balanceColor};">
+            ${formatCurrency(tx.balance)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Error loading trajectory:', error);
+    panel.style.display = 'none';
+  }
 }
 
 // Quick record functions (called from inline buttons)
