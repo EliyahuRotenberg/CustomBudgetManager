@@ -62,6 +62,15 @@ body {
 .current-month {
   font-size: 16px;
   color: var(--text-secondary);
+  min-width: 140px;
+  text-align: center;
+}
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 /* Safe to Spend - Hero Section */
@@ -421,6 +430,17 @@ body {
   z-index: 2000;
 }
 
+/* Nested modals (opened from within another modal) need higher z-index */
+#incomeSourceModal,
+#obligationModal,
+#goalModal,
+#editCategoryModal,
+#editExpenseModal,
+#editIncomeReceivedModal,
+#editObligationPaidModal {
+  z-index: 2100;
+}
+
 .modal-overlay.active {
   display: flex;
 }
@@ -621,6 +641,12 @@ body {
 
 .summary-value.negative {
   color: var(--red);
+}
+
+.summary-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
 }
 
 /* Utility classes */

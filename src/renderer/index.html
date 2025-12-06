@@ -12,7 +12,12 @@
     <div class="header">
       <div>
         <h1>Budget Manager</h1>
-        <div class="current-month" id="currentMonth"></div>
+        <div class="month-navigation">
+          <button class="btn btn-icon btn-secondary" id="prevMonthBtn" title="Previous Month">←</button>
+          <div class="current-month" id="currentMonth"></div>
+          <button class="btn btn-icon btn-secondary" id="nextMonthBtn" title="Next Month">→</button>
+          <button class="btn btn-small btn-secondary" id="todayBtn" style="margin-left: 8px;">Today</button>
+        </div>
       </div>
       <div style="display: flex; gap: 10px;">
         <button class="btn btn-secondary" id="settingsBtn">⚙️ Settings</button>
@@ -25,6 +30,30 @@
       <div class="safe-to-spend-label">Safe to Spend</div>
       <div class="safe-to-spend-amount positive" id="safeToSpendAmount">₪0.00</div>
       <div class="safe-to-spend-status positive" id="safeToSpendStatus">Healthy Buffer</div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid" id="summaryCards">
+      <div class="summary-card">
+        <div class="summary-label">Income</div>
+        <div class="summary-value positive" id="summaryIncome">₪0.00</div>
+        <div class="summary-sub" id="summaryIncomeDetail">0 / 0 sources received</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Obligations</div>
+        <div class="summary-value negative" id="summaryObligations">₪0.00</div>
+        <div class="summary-sub" id="summaryObligationsDetail">0 / 0 paid</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Expenses</div>
+        <div class="summary-value negative" id="summaryExpenses">₪0.00</div>
+        <div class="summary-sub" id="summaryExpensesDetail">0 transactions</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Net This Month</div>
+        <div class="summary-value" id="summaryNet">₪0.00</div>
+        <div class="summary-sub" id="summaryNetDetail">Income - Obligations - Expenses</div>
+      </div>
     </div>
 
     <!-- Upcoming Alerts -->
