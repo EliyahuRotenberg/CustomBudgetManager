@@ -202,6 +202,28 @@ class BudgetDatabase {
     return result.lastInsertRowid;
   }
 
+  updateIncomeReceived(id, data) {
+    const date = new Date(data.received_date);
+    const stmt = this.db.prepare(`
+      UPDATE income_received
+      SET income_source_id = ?, amount = ?, received_date = ?, month = ?, year = ?, notes = ?
+      WHERE id = ?
+    `);
+    stmt.run(
+      data.income_source_id,
+      data.amount,
+      data.received_date,
+      date.getMonth() + 1,
+      date.getFullYear(),
+      data.notes || null,
+      id
+    );
+  }
+
+  deleteIncomeReceived(id) {
+    this.db.prepare('DELETE FROM income_received WHERE id = ?').run(id);
+  }
+
   getIncomeReceived(month, year) {
     return this.db.prepare(`
       SELECT ir.*, ins.name as source_name
@@ -273,6 +295,28 @@ class BudgetDatabase {
     return result.lastInsertRowid;
   }
 
+  updateObligationPaid(id, data) {
+    const date = new Date(data.paid_date);
+    const stmt = this.db.prepare(`
+      UPDATE obligations_paid
+      SET obligation_id = ?, amount = ?, paid_date = ?, month = ?, year = ?, notes = ?
+      WHERE id = ?
+    `);
+    stmt.run(
+      data.obligation_id,
+      data.amount,
+      data.paid_date,
+      date.getMonth() + 1,
+      date.getFullYear(),
+      data.notes || null,
+      id
+    );
+  }
+
+  deleteObligationPaid(id) {
+    this.db.prepare('DELETE FROM obligations_paid WHERE id = ?').run(id);
+  }
+
   getObligationsPaid(month, year) {
     return this.db.prepare(`
       SELECT op.*, o.name as obligation_name, o.category
@@ -292,6 +336,11 @@ class BudgetDatabase {
     const stmt = this.db.prepare('INSERT INTO expense_categories (name) VALUES (?)');
     const result = stmt.run(name);
     return result.lastInsertRowid;
+  }
+
+  updateExpenseCategory(id, name) {
+    const stmt = this.db.prepare('UPDATE expense_categories SET name = ? WHERE id = ?');
+    stmt.run(name, id);
   }
 
   deleteExpenseCategory(id) {
@@ -318,6 +367,28 @@ class BudgetDatabase {
       data.notes || null
     );
     return result.lastInsertRowid;
+  }
+
+  updateExpense(id, data) {
+    const date = new Date(data.expense_date);
+    const stmt = this.db.prepare(`
+      UPDATE expenses
+      SET category_id = ?, amount = ?, expense_date = ?, month = ?, year = ?, notes = ?
+      WHERE id = ?
+    `);
+    stmt.run(
+      data.category_id,
+      data.amount,
+      data.expense_date,
+      date.getMonth() + 1,
+      date.getFullYear(),
+      data.notes || null,
+      id
+    );
+  }
+
+  deleteExpense(id) {
+    this.db.prepare('DELETE FROM expenses WHERE id = ?').run(id);
   }
 
   getExpenses(month, year) {

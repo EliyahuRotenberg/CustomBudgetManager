@@ -42,7 +42,10 @@
             <div class="section-title">Income</div>
             <div class="section-subtitle" id="incomeSubtitle">Expected vs Received</div>
           </div>
-          <button class="btn btn-small btn-secondary" id="manageIncomeBtn">Manage</button>
+          <div class="section-actions">
+            <button class="btn btn-small btn-secondary" id="viewIncomeRecordsBtn">View Records</button>
+            <button class="btn btn-small btn-secondary" id="manageIncomeBtn">Manage</button>
+          </div>
         </div>
         <ul class="checklist" id="incomeChecklist"></ul>
       </div>
@@ -54,7 +57,10 @@
             <div class="section-title">Obligations</div>
             <div class="section-subtitle" id="obligationsSubtitle">Due vs Paid</div>
           </div>
-          <button class="btn btn-small btn-secondary" id="manageObligationsBtn">Manage</button>
+          <div class="section-actions">
+            <button class="btn btn-small btn-secondary" id="viewObligationPaymentsBtn">View Records</button>
+            <button class="btn btn-small btn-secondary" id="manageObligationsBtn">Manage</button>
+          </div>
         </div>
         <ul class="checklist" id="obligationsChecklist"></ul>
       </div>
@@ -334,6 +340,156 @@
           <input type="number" class="form-input" id="goalMonthlyTarget" step="0.01" inputmode="decimal">
         </div>
         <button type="submit" class="btn btn-success" style="width: 100%;">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Expenses View Modal -->
+  <div class="modal-overlay" id="expensesViewModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Expenses This Month</h2>
+        <button class="modal-close" id="closeExpensesView">&times;</button>
+      </div>
+      <div id="expensesDetailList"></div>
+    </div>
+  </div>
+
+  <!-- Edit Expense Modal -->
+  <div class="modal-overlay" id="editExpenseModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Expense</h2>
+        <button class="modal-close" id="closeEditExpenseModal">&times;</button>
+      </div>
+      <form id="editExpenseForm">
+        <input type="hidden" id="editExpenseId">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="editExpenseCategorySelect" required>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Amount (₪)</label>
+            <input type="number" class="form-input" id="editExpenseAmount" step="0.01" inputmode="decimal" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="editExpenseDate" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (optional)</label>
+          <input type="text" class="form-input" id="editExpenseNotes">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Income Received View Modal -->
+  <div class="modal-overlay" id="incomeReceivedViewModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Income Received This Month</h2>
+        <button class="modal-close" id="closeIncomeReceivedView">&times;</button>
+      </div>
+      <div id="incomeReceivedDetailList"></div>
+    </div>
+  </div>
+
+  <!-- Edit Income Received Modal -->
+  <div class="modal-overlay" id="editIncomeReceivedModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Income Record</h2>
+        <button class="modal-close" id="closeEditIncomeReceivedModal">&times;</button>
+      </div>
+      <form id="editIncomeReceivedForm">
+        <input type="hidden" id="editIncomeReceivedId">
+        <div class="form-group">
+          <label class="form-label">Income Source</label>
+          <select class="form-select" id="editIncomeReceivedSourceSelect" required>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Amount (₪)</label>
+            <input type="number" class="form-input" id="editIncomeReceivedAmount" step="0.01" inputmode="decimal" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="editIncomeReceivedDate" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (optional)</label>
+          <input type="text" class="form-input" id="editIncomeReceivedNotes">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Obligations Paid View Modal -->
+  <div class="modal-overlay" id="obligationsPaidViewModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Obligations Paid This Month</h2>
+        <button class="modal-close" id="closeObligationsPaidView">&times;</button>
+      </div>
+      <div id="obligationsPaidDetailList"></div>
+    </div>
+  </div>
+
+  <!-- Edit Obligation Paid Modal -->
+  <div class="modal-overlay" id="editObligationPaidModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Obligation Payment</h2>
+        <button class="modal-close" id="closeEditObligationPaidModal">&times;</button>
+      </div>
+      <form id="editObligationPaidForm">
+        <input type="hidden" id="editObligationPaidId">
+        <div class="form-group">
+          <label class="form-label">Obligation</label>
+          <select class="form-select" id="editObligationPaidSelect" required>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Amount (₪)</label>
+            <input type="number" class="form-input" id="editObligationPaidAmount" step="0.01" inputmode="decimal" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="editObligationPaidDate" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (optional)</label>
+          <input type="text" class="form-input" id="editObligationPaidNotes">
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Category Modal -->
+  <div class="modal-overlay" id="editCategoryModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Category</h2>
+        <button class="modal-close" id="closeEditCategoryModal">&times;</button>
+      </div>
+      <form id="editCategoryForm">
+        <input type="hidden" id="editCategoryId">
+        <div class="form-group">
+          <label class="form-label">Category Name</label>
+          <input type="text" class="form-input" id="editCategoryName" required>
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">Save Changes</button>
       </form>
     </div>
   </div>

@@ -94,6 +94,14 @@ function setupIPC() {
     return db.addExpense(data);
   });
 
+  ipcMain.handle('update-expense', async (event, id, data) => {
+    return db.updateExpense(id, data);
+  });
+
+  ipcMain.handle('delete-expense', async (event, id) => {
+    return db.deleteExpense(id);
+  });
+
   ipcMain.handle('get-expenses', async (event, month, year) => {
     return db.getExpenses(month, year);
   });
@@ -106,8 +114,30 @@ function setupIPC() {
     return db.addExpenseCategory(name);
   });
 
+  ipcMain.handle('update-expense-category', async (event, id, name) => {
+    return db.updateExpenseCategory(id, name);
+  });
+
   ipcMain.handle('delete-expense-category', async (event, id) => {
     return db.deleteExpenseCategory(id);
+  });
+
+  // Income received management
+  ipcMain.handle('update-income-received', async (event, id, data) => {
+    return db.updateIncomeReceived(id, data);
+  });
+
+  ipcMain.handle('delete-income-received', async (event, id) => {
+    return db.deleteIncomeReceived(id);
+  });
+
+  // Obligations paid management
+  ipcMain.handle('update-obligation-paid', async (event, id, data) => {
+    return db.updateObligationPaid(id, data);
+  });
+
+  ipcMain.handle('delete-obligation-paid', async (event, id) => {
+    return db.deleteObligationPaid(id);
   });
 
   // Goals
