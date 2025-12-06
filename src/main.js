@@ -106,6 +106,10 @@ function setupIPC() {
     return db.addExpenseCategory(name);
   });
 
+  ipcMain.handle('delete-expense-category', async (event, id) => {
+    return db.deleteExpenseCategory(id);
+  });
+
   // Goals
   ipcMain.handle('get-goals', async () => {
     return db.getGoals();

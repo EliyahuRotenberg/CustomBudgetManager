@@ -294,6 +294,15 @@ class BudgetDatabase {
     return result.lastInsertRowid;
   }
 
+  deleteExpenseCategory(id) {
+    // Check if category is in use
+    const expensesWithCategory = this.db.prepare('SELECT COUNT(*) as count FROM expenses WHERE category_id = ?').get(id);
+    if (expensesWithCategory.count > 0) {
+      throw new Error('Cannot delete category that has existing expenses');
+    }
+    this.db.prepare('DELETE FROM expense_categories WHERE id = ?').run(id);
+  }
+
   addExpense(data) {
     const date = new Date(data.expense_date);
     const stmt = this.db.prepare(`

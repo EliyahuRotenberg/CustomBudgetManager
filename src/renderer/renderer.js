@@ -675,9 +675,15 @@ async function handleAddCategory() {
 }
 
 window.deleteCategory = async (id, name) => {
-  // Note: We don't have a delete category API yet, so we'll just show a message
-  // In a full implementation, you'd want to check if the category is in use first
-  alert(`Delete functionality for categories is not yet implemented. Category "${name}" cannot be deleted if it has existing expenses.`);
+  if (!confirm(`Are you sure you want to delete the category "${name}"?`)) return;
+
+  try {
+    await ipcRenderer.invoke('delete-expense-category', id);
+    await loadDashboard();
+    await loadSettingsData();
+  } catch (error) {
+    alert('Error deleting category: ' + error.message);
+  }
 };
 
 function renderGoalsManagement() {
