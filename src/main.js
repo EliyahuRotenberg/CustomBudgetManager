@@ -173,7 +173,7 @@ function checkUpcomingObligations() {
       if (Notification.isSupported()) {
         new Notification({
           title: 'Upcoming Payment',
-          body: `${obligation.name} (£${obligation.amount}) due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}`
+          body: `${obligation.name} (₪${obligation.amount}) due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}`
         }).show();
       }
     }

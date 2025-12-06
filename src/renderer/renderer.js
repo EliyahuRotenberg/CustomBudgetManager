@@ -350,7 +350,7 @@ function renderSuggestions() {
   if (emergencyGoal && emergencyGoal.current_amount < emergencyGoal.target_amount) {
     const needed = emergencyGoal.target_amount - emergencyGoal.current_amount;
     const suggested = Math.min(surplus * 0.5, needed);
-    suggestions.push(`💡 Consider putting £${suggested.toFixed(2)} toward your emergency fund`);
+    suggestions.push(`💡 Consider putting ₪${suggested.toFixed(2)} toward your emergency fund`);
   }
 
   // Debt suggestion
@@ -358,7 +358,7 @@ function renderSuggestions() {
   if (debtGoal && debtGoal.target_amount > 0) {
     const extraPayment = Math.min(surplus * 0.3, 500);
     if (extraPayment > 50) {
-      suggestions.push(`💡 You could pay an extra £${extraPayment.toFixed(2)} toward university debt`);
+      suggestions.push(`💡 You could pay an extra ₪${extraPayment.toFixed(2)} toward university debt`);
     }
   }
 
@@ -496,7 +496,7 @@ async function openQuickEntry() {
 
   const obligationSelect = document.getElementById('obligationSelect');
   obligationSelect.innerHTML = '<option value="">Select obligation...</option>' +
-    currentData.obligations.map(o => `<option value="${o.id}">${o.name} (£${o.amount})</option>`).join('');
+    currentData.obligations.map(o => `<option value="${o.id}">${o.name} (₪${o.amount})</option>`).join('');
 
   // Set today's date
   const today = new Date().toISOString().split('T')[0];
@@ -957,7 +957,7 @@ function setupKeyboardShortcuts() {
 
 // Utility functions
 function formatCurrency(amount) {
-  return `£${amount.toFixed(2)}`;
+  return `₪${amount.toFixed(2)}`;
 }
 
 function formatDate(dateString) {
