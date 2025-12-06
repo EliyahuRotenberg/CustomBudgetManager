@@ -392,13 +392,15 @@ async function renderTrajectory() {
       const formattedDate = `${date.getDate()} ${date.toLocaleString('en-US', { month: 'short' })}`;
       const amountClass = tx.amount >= 0 ? 'positive' : 'negative';
       const balanceColor = tx.balance >= 0 ? 'var(--green)' : 'var(--red)';
+      const statusClass = tx.status === 'expected' ? 'expected' : '';
+      const statusLabel = tx.status === 'expected' ? 'expected' : tx.type;
 
       return `
-        <div class="trajectory-item ${tx.type}">
+        <div class="trajectory-item ${tx.type} ${statusClass}">
           <div class="trajectory-date">${formattedDate}</div>
           <div class="trajectory-info">
             <div class="trajectory-description">${tx.description}</div>
-            <div class="trajectory-type">${tx.type}</div>
+            <div class="trajectory-type">${statusLabel}</div>
           </div>
           <div class="trajectory-amount ${amountClass}">
             ${tx.amount >= 0 ? '+' : ''}${formatCurrency(tx.amount)}

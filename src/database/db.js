@@ -419,42 +419,87 @@ class BudgetDatabase {
   // ===== Monthly Trajectory =====
   getMonthlyTrajectory(month, year) {
     // Get all transactions for the month
+    const incomeSources = this.getIncomeSources();
     const incomeReceived = this.getIncomeReceived(month, year);
+    const obligations = this.getObligations();
     const obligationsPaid = this.getObligationsPaid(month, year);
     const expenses = this.getExpenses(month, year);
 
     // Combine all transactions with dates
     const transactions = [];
 
+    // Add received income (actual)
     incomeReceived.forEach(income => {
       transactions.push({
         date: income.received_date,
         type: 'income',
         amount: income.amount,
-        description: income.source_name
+        description: income.source_name,
+        status: 'actual'
       });
     });
 
+    // Add expected income (not yet received)
+    const receivedSourceIds = new Set(incomeReceived.map(i => i.income_source_id));
+    incomeSources.forEach(source => {
+      if (!receivedSourceIds.has(source.id)) {
+        const expectedDate = new Date(year, month - 1, source.expected_day);
+        transactions.push({
+          date: expectedDate.toISOString().split('T')[0],
+          type: 'income',
+          amount: source.expected_amount_min,
+          description: source.name,
+          status: 'expected'
+        });
+      }
+    });
+
+    // Add paid obligations (actual)
     obligationsPaid.forEach(obl => {
       transactions.push({
         date: obl.paid_date,
         type: 'obligation',
         amount: -obl.amount,
-        description: obl.obligation_name
+        description: obl.obligation_name,
+        status: 'actual'
       });
     });
 
+    // Add unpaid obligations (expected)
+    const paidObligationIds = new Set(obligationsPaid.map(o => o.obligation_id));
+    obligations.forEach(obligation => {
+      if (!paidObligationIds.has(obligation.id)) {
+        const dueDate = new Date(year, month - 1, obligation.due_date);
+        transactions.push({
+          date: dueDate.toISOString().split('T')[0],
+          type: 'obligation',
+          amount: -obligation.amount,
+          description: obligation.name,
+          status: 'expected'
+        });
+      }
+    });
+
+    // Add expenses (always actual)
     expenses.forEach(exp => {
       transactions.push({
         date: exp.expense_date,
         type: 'expense',
         amount: -exp.amount,
-        description: exp.category_name
+        description: exp.category_name,
+        status: 'actual'
       });
     });
 
-    // Sort by date
-    transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Sort by date, then by status (actual before expected)
+    transactions.sort((a, b) => {
+      const dateCompare = new Date(a.date) - new Date(b.date);
+      if (dateCompare !== 0) return dateCompare;
+      // If same date, actual comes before expected
+      if (a.status === 'actual' && b.status === 'expected') return -1;
+      if (a.status === 'expected' && b.status === 'actual') return 1;
+      return 0;
+    });
 
     // Calculate running balance
     let runningBalance = 0;

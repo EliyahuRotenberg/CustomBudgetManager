@@ -662,6 +662,11 @@ body {
   border-left: 4px solid var(--border-color);
 }
 
+.trajectory-item.expected {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
 .trajectory-item.income {
   border-left-color: var(--green);
 }
