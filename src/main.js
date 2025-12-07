@@ -1,5 +1,6 @@
-const { app, BrowserWindow, ipcMain, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const Database = require('./database/db');
 
 let mainWindow;
@@ -12,6 +13,8 @@ function createWindow() {
     minWidth: 1000,
     minHeight: 700,
     backgroundColor: '#1a1a1a',
+    frame: false,
+    titleBarStyle: 'hidden',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -187,11 +190,78 @@ function setupIPC() {
     return db.exportToCSV(type, month, year);
   });
 
+  // Full backup/restore
+  ipcMain.handle('export-backup', async () => {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export Backup',
+      defaultPath: `budget-backup-${new Date().toISOString().split('T')[0]}.json`,
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] }
+      ]
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: false, canceled: true };
+    }
+
+    try {
+      const backup = db.exportFullBackup();
+      fs.writeFileSync(result.filePath, JSON.stringify(backup, null, 2), 'utf8');
+      return { success: true, filePath: result.filePath };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('import-backup', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Import Backup',
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] }
+      ],
+      properties: ['openFile']
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: false, canceled: true };
+    }
+
+    try {
+      const content = fs.readFileSync(result.filePaths[0], 'utf8');
+      const backup = JSON.parse(content);
+      db.importFullBackup(backup);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
   // System tray notifications
   ipcMain.handle('show-notification', async (event, title, body) => {
     if (Notification.isSupported()) {
       new Notification({ title, body }).show();
     }
+  });
+
+  // Window controls
+  ipcMain.handle('window-minimize', () => {
+    mainWindow.minimize();
+  });
+
+  ipcMain.handle('window-maximize', () => {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  });
+
+  ipcMain.handle('window-close', () => {
+    mainWindow.close();
+  });
+
+  ipcMain.handle('window-is-maximized', () => {
+    return mainWindow.isMaximized();
   });
 }
 
