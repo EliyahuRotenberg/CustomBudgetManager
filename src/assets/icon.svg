@@ -1,0 +1,19 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="256" height="256" rx="32" fill="#1a1a1a"/>
+
+  <!-- Card/Wallet shape -->
+  <rect x="40" y="64" width="176" height="128" rx="16" fill="#252525" stroke="#22c55e" stroke-width="4"/>
+
+  <!-- Divider line -->
+  <path d="M40 112H216" stroke="#22c55e" stroke-width="4"/>
+
+  <!-- Card chip -->
+  <rect x="60" y="132" width="40" height="28" rx="4" fill="#22c55e"/>
+  <path d="M68 146H92" stroke="#1a1a1a" stroke-width="2"/>
+  <path d="M80 138V154" stroke="#1a1a1a" stroke-width="2"/>
+
+  <!-- Dollar sign -->
+  <circle cx="168" cy="148" r="24" stroke="#22c55e" stroke-width="4"/>
+  <path d="M168 136V160M160 140C160 140 164 136 168 136C172 136 176 140 172 144C168 148 164 148 164 148C164 148 160 152 164 156C168 160 172 156 172 156" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+</svg>

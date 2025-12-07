@@ -470,9 +470,18 @@ class BudgetDatabase {
       .filter(o => !paidObligationIds.has(o.id))
       .reduce((sum, o) => sum + o.amount, 0);
 
-    // Safe to spend = income received - obligations paid - variable spending
-    // Note: We only count what's actually happened (received/paid/spent), not expected/pending
-    const safeToSpend = totalReceivedIncome - totalObligationsPaid - totalVariableSpending;
+    // Calculate pending income (not yet received this month)
+    const receivedSourceIds = new Set(incomeReceived.map(i => i.income_source_id));
+    const pendingIncome = incomeSources
+      .filter(s => !receivedSourceIds.has(s.id))
+      .reduce((sum, s) => sum + s.expected_amount_min, 0);
+
+    // Current balance = what's actually happened
+    const currentBalance = totalReceivedIncome - totalObligationsPaid - totalVariableSpending;
+
+    // Projected end of month = current balance + expected income - pending obligations
+    // This is what the user will have left after all expected transactions
+    const projectedEndOfMonth = currentBalance + pendingIncome - pendingObligations;
 
     return {
       month,
@@ -482,8 +491,12 @@ class BudgetDatabase {
       totalObligations,
       totalObligationsPaid,
       pendingObligations,
+      pendingIncome,
       totalVariableSpending,
-      safeToSpend
+      currentBalance,
+      projectedEndOfMonth,
+      // Keep safeToSpend as alias for projectedEndOfMonth for the main display
+      safeToSpend: projectedEndOfMonth
     };
   }
 
@@ -608,6 +621,135 @@ class BudgetDatabase {
     });
 
     return csv;
+  }
+
+  // ===== Full Backup/Restore =====
+  exportFullBackup() {
+    return {
+      version: 1,
+      exportDate: new Date().toISOString(),
+      data: {
+        income_sources: this.db.prepare('SELECT * FROM income_sources').all(),
+        income_received: this.db.prepare('SELECT * FROM income_received').all(),
+        obligations: this.db.prepare('SELECT * FROM obligations').all(),
+        obligations_paid: this.db.prepare('SELECT * FROM obligations_paid').all(),
+        expense_categories: this.db.prepare('SELECT * FROM expense_categories').all(),
+        expenses: this.db.prepare('SELECT * FROM expenses').all(),
+        goals: this.db.prepare('SELECT * FROM goals').all(),
+        goal_history: this.db.prepare('SELECT * FROM goal_history').all()
+      }
+    };
+  }
+
+  importFullBackup(backup) {
+    // Validate backup format
+    if (!backup.version || !backup.data) {
+      throw new Error('Invalid backup file format');
+    }
+
+    // Use a transaction for atomic restore
+    const restore = this.db.transaction(() => {
+      // Clear existing data (in correct order for foreign keys)
+      this.db.prepare('DELETE FROM goal_history').run();
+      this.db.prepare('DELETE FROM expenses').run();
+      this.db.prepare('DELETE FROM obligations_paid').run();
+      this.db.prepare('DELETE FROM income_received').run();
+      this.db.prepare('DELETE FROM goals').run();
+      this.db.prepare('DELETE FROM expense_categories').run();
+      this.db.prepare('DELETE FROM obligations').run();
+      this.db.prepare('DELETE FROM income_sources').run();
+
+      // Import income sources
+      if (backup.data.income_sources) {
+        const stmt = this.db.prepare(`
+          INSERT INTO income_sources (id, name, expected_amount_min, expected_amount_max, expected_day, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        backup.data.income_sources.forEach(row => {
+          stmt.run(row.id, row.name, row.expected_amount_min, row.expected_amount_max, row.expected_day, row.created_at);
+        });
+      }
+
+      // Import income received
+      if (backup.data.income_received) {
+        const stmt = this.db.prepare(`
+          INSERT INTO income_received (id, income_source_id, amount, received_date, month, year, notes, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        backup.data.income_received.forEach(row => {
+          stmt.run(row.id, row.income_source_id, row.amount, row.received_date, row.month, row.year, row.notes, row.created_at);
+        });
+      }
+
+      // Import obligations
+      if (backup.data.obligations) {
+        const stmt = this.db.prepare(`
+          INSERT INTO obligations (id, name, amount, due_date, category, total_balance, interest_rate, payoff_target_date, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        backup.data.obligations.forEach(row => {
+          stmt.run(row.id, row.name, row.amount, row.due_date, row.category, row.total_balance, row.interest_rate, row.payoff_target_date, row.created_at);
+        });
+      }
+
+      // Import obligations paid
+      if (backup.data.obligations_paid) {
+        const stmt = this.db.prepare(`
+          INSERT INTO obligations_paid (id, obligation_id, amount, paid_date, month, year, notes, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        backup.data.obligations_paid.forEach(row => {
+          stmt.run(row.id, row.obligation_id, row.amount, row.paid_date, row.month, row.year, row.notes, row.created_at);
+        });
+      }
+
+      // Import expense categories
+      if (backup.data.expense_categories) {
+        const stmt = this.db.prepare(`
+          INSERT INTO expense_categories (id, name, created_at)
+          VALUES (?, ?, ?)
+        `);
+        backup.data.expense_categories.forEach(row => {
+          stmt.run(row.id, row.name, row.created_at);
+        });
+      }
+
+      // Import expenses
+      if (backup.data.expenses) {
+        const stmt = this.db.prepare(`
+          INSERT INTO expenses (id, category_id, amount, expense_date, month, year, notes, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        backup.data.expenses.forEach(row => {
+          stmt.run(row.id, row.category_id, row.amount, row.expense_date, row.month, row.year, row.notes, row.created_at);
+        });
+      }
+
+      // Import goals
+      if (backup.data.goals) {
+        const stmt = this.db.prepare(`
+          INSERT INTO goals (id, type, target_amount, current_amount, monthly_target, minimum_payment, chip_away_enabled, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        backup.data.goals.forEach(row => {
+          stmt.run(row.id, row.type, row.target_amount, row.current_amount, row.monthly_target, row.minimum_payment, row.chip_away_enabled, row.updated_at);
+        });
+      }
+
+      // Import goal history
+      if (backup.data.goal_history) {
+        const stmt = this.db.prepare(`
+          INSERT INTO goal_history (id, goal_type, amount, month, year, recorded_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        backup.data.goal_history.forEach(row => {
+          stmt.run(row.id, row.goal_type, row.amount, row.month, row.year, row.recorded_at);
+        });
+      }
+    });
+
+    restore();
+    return true;
   }
 
   close() {

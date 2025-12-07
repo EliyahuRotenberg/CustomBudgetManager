@@ -123,21 +123,24 @@ function renderSummaryCards() {
 
 // Render Safe to Spend
 function renderSafeToSpend() {
-  const amount = currentData.snapshot.safeToSpend || 0;
+  const projected = currentData.snapshot.projectedEndOfMonth || 0;
+  const current = currentData.snapshot.currentBalance || 0;
   const amountEl = document.getElementById('safeToSpendAmount');
   const statusEl = document.getElementById('safeToSpendStatus');
+  const currentBalanceEl = document.getElementById('currentBalanceAmount');
 
-  amountEl.textContent = formatCurrency(amount);
+  amountEl.textContent = formatCurrency(projected);
+  currentBalanceEl.textContent = formatCurrency(current);
 
-  // Color coding
+  // Color coding based on projected end of month
   amountEl.className = 'safe-to-spend-amount';
   statusEl.className = 'safe-to-spend-status';
 
-  if (amount >= 500) {
+  if (projected >= 500) {
     amountEl.classList.add('positive');
     statusEl.classList.add('positive');
     statusEl.textContent = 'Healthy Buffer';
-  } else if (amount >= 100) {
+  } else if (projected >= 100) {
     amountEl.classList.add('warning');
     statusEl.classList.add('warning');
     statusEl.textContent = 'Tight but Okay';
@@ -520,6 +523,17 @@ window.recordObligationQuick = async (obligationId, obligationName, expectedAmou
 
 // Quick Entry Modal
 function setupEventListeners() {
+  // Title bar window controls
+  document.getElementById('minimizeBtn').addEventListener('click', () => {
+    ipcRenderer.invoke('window-minimize');
+  });
+  document.getElementById('maximizeBtn').addEventListener('click', () => {
+    ipcRenderer.invoke('window-maximize');
+  });
+  document.getElementById('closeBtn').addEventListener('click', () => {
+    ipcRenderer.invoke('window-close');
+  });
+
   // Quick entry
   document.getElementById('quickEntryBtn').addEventListener('click', openQuickEntry);
   document.getElementById('closeQuickEntry').addEventListener('click', closeQuickEntry);
@@ -557,8 +571,20 @@ function setupEventListeners() {
   document.getElementById('closeObligationModal').addEventListener('click', closeObligationModal);
   document.getElementById('closeGoalModal').addEventListener('click', closeGoalModal);
 
-  // Export button
-  document.getElementById('exportBtn').addEventListener('click', handleExport);
+  // Data dropdown menu
+  document.getElementById('dataMenuBtn').addEventListener('click', toggleDataDropdown);
+  document.getElementById('exportCsvBtn').addEventListener('click', handleExport);
+  document.getElementById('backupBtn').addEventListener('click', handleBackup);
+  document.getElementById('restoreBtn').addEventListener('click', handleRestore);
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('dataDropdownMenu');
+    const btn = document.getElementById('dataMenuBtn');
+    if (!dropdown.contains(e.target) && e.target !== btn) {
+      dropdown.classList.remove('active');
+    }
+  });
 
   // Category management
   document.getElementById('addCategoryBtn').addEventListener('click', handleAddCategory);
@@ -1121,12 +1147,19 @@ window.editGoal = (type) => {
   openGoalModal(type);
 };
 
-// Export functionality
+// Data dropdown toggle
+function toggleDataDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('dataDropdownMenu').classList.toggle('active');
+}
+
+// Export functionality (CSV)
 async function handleExport() {
-  const options = ['Income', 'Obligations', 'Expenses', 'Cancel'];
+  document.getElementById('dataDropdownMenu').classList.remove('active');
+
   const choice = prompt('Export data:\n1. Income\n2. Obligations\n3. Expenses\n\nEnter number (1-3):');
 
-  if (!choice || choice === '4') return;
+  if (!choice) return;
 
   let type;
   switch (choice) {
@@ -1161,6 +1194,52 @@ async function handleExport() {
     alert(`${type} data exported successfully!`);
   } catch (error) {
     alert('Error exporting data: ' + error.message);
+  }
+}
+
+// Backup all data
+async function handleBackup() {
+  document.getElementById('dataDropdownMenu').classList.remove('active');
+
+  try {
+    const result = await ipcRenderer.invoke('export-backup');
+
+    if (result.canceled) return;
+
+    if (result.success) {
+      alert(`Backup saved successfully to:\n${result.filePath}`);
+    } else {
+      alert('Error creating backup: ' + result.error);
+    }
+  } catch (error) {
+    alert('Error creating backup: ' + error.message);
+  }
+}
+
+// Restore from backup
+async function handleRestore() {
+  document.getElementById('dataDropdownMenu').classList.remove('active');
+
+  const confirmed = confirm(
+    'WARNING: Restoring from backup will replace ALL your current data.\n\n' +
+    'This action cannot be undone. Are you sure you want to continue?'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const result = await ipcRenderer.invoke('import-backup');
+
+    if (result.canceled) return;
+
+    if (result.success) {
+      alert('Data restored successfully! The application will now reload.');
+      await loadDashboard();
+    } else {
+      alert('Error restoring data: ' + result.error);
+    }
+  } catch (error) {
+    alert('Error restoring data: ' + error.message);
   }
 }
 

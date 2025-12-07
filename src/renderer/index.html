@@ -7,6 +7,38 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Custom Title Bar -->
+  <div class="title-bar">
+    <div class="title-bar-left">
+      <div class="app-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+          <path d="M2 10H22" stroke="currentColor" stroke-width="2"/>
+          <path d="M8 15H12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="17" cy="15" r="2" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </div>
+      <span class="app-title">Budget Manager</span>
+    </div>
+    <div class="title-bar-controls">
+      <button class="title-bar-btn" id="minimizeBtn" title="Minimize">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <rect y="5" width="12" height="2" fill="currentColor"/>
+        </svg>
+      </button>
+      <button class="title-bar-btn" id="maximizeBtn" title="Maximize">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <rect x="1" y="1" width="10" height="10" stroke="currentColor" stroke-width="2" fill="none"/>
+        </svg>
+      </button>
+      <button class="title-bar-btn close-btn" id="closeBtn" title="Close">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <path d="M1 1L11 11M1 11L11 1" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
   <div class="container">
     <!-- Header -->
     <div class="header">
@@ -20,16 +52,27 @@
         </div>
       </div>
       <div style="display: flex; gap: 10px;">
-        <button class="btn btn-secondary" id="settingsBtn">⚙️ Settings</button>
-        <button class="btn btn-secondary" id="exportBtn">📊 Export</button>
+        <button class="btn btn-secondary" id="settingsBtn">Settings</button>
+        <div class="dropdown">
+          <button class="btn btn-secondary" id="dataMenuBtn">Data</button>
+          <div class="dropdown-menu" id="dataDropdownMenu">
+            <button class="dropdown-item" id="exportCsvBtn">Export CSV...</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="backupBtn">Backup All Data...</button>
+            <button class="dropdown-item" id="restoreBtn">Restore from Backup...</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Safe to Spend Hero -->
     <div class="safe-to-spend-hero">
-      <div class="safe-to-spend-label">Safe to Spend</div>
+      <div class="safe-to-spend-label">Projected End of Month</div>
       <div class="safe-to-spend-amount positive" id="safeToSpendAmount">₪0.00</div>
       <div class="safe-to-spend-status positive" id="safeToSpendStatus">Healthy Buffer</div>
+      <div class="current-balance-line" id="currentBalanceLine">
+        Current Balance: <span id="currentBalanceAmount">₪0.00</span>
+      </div>
     </div>
 
     <!-- Summary Cards -->
